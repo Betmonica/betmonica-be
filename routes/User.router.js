@@ -8,7 +8,9 @@ const router = Router();
 router.post('/login', UserController.login)
 router.get('/refresh-token', UserController.token)
 router.post('/registration', UserController.registration)
-router.post('/logout', authenticateToken, UserController.logout)
+router.delete('/logout', authenticateToken, UserController.logout)
+
+router.get('/balance/get', authenticateToken, UserController.getBalance)
 
 router.get("/bets/get-bets", authenticateToken, BetController.getBets);
 router.post("/bets/place-bet", authenticateToken, BetController.placeBet);

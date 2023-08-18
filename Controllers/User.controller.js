@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken')
 const TokenModel = require('../models/Token.model')
+const UserModel = require('../models/User.model')
 const UserService = require('../Services/User.service')
 const {errorsGenerator, errorTypes} = require("../utils/error-generator");
 const UserDto = require("../dtos/User.dto");
@@ -71,6 +72,23 @@ class UserController {
         success: true
       })
     } catch (error) {
+      next(errorsGenerator.checkErrorType(error))
+    }
+  }
+
+  getBalance = async (req, res, next) => {
+    try {
+      const {_id} = req.user
+
+      const user = await UserModel.findById(_id);
+
+      res.status(200).send({
+        data: {
+          balance: user.balance
+        },
+        success: true
+      })
+    } catch (err) {
       next(errorsGenerator.checkErrorType(error))
     }
   }
