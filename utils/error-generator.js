@@ -7,7 +7,6 @@ const errorTypes = {
 
 class ErrorsGenerator {
   checkErrorType(error) {
-    let errorMessageTxt;
     let errorType;
     let errorMessage;
 
@@ -22,9 +21,8 @@ class ErrorsGenerator {
         errorType = errorTypes.UNEXPECTED
       }
     } else if (typeof error === 'string') {
-      errorMessageTxt = error
-      errorType = errorMessageTxt.split(' ')[0].trim().slice(1, -1);
-      errorMessage = errorMessageTxt.slice(errorType.length + 2).trim()
+      errorType = error.split(' ')[0].trim().slice(1, -1);
+      errorMessage = error.slice(errorType.length + 2).trim()
     } else {
       return this._generateError(errorTypes.UNEXPECTED, error)
     }

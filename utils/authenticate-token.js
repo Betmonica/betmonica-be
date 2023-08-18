@@ -23,6 +23,7 @@ const authenticateToken = async (req, res, next) => {
       if (err.name === 'TokenExpiredError') {
         await TokenModel.findOneAndDelete({accessToken: token})
         next(errorsGenerator.checkErrorType(`${errorTypes.AUTHENTICATE} Token expired!`));
+        return
       }
       next(errorsGenerator.checkErrorType(`${errorTypes.AUTHENTICATE} Bearer token error ${JSON.stringify(err)}!`));
       return;

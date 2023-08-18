@@ -17,12 +17,13 @@ class UserController {
         throw Error(`${errorTypes.VALIDATION} Miss "password" field!`)
       }
 
-      const tokens = await UserService.login(email, password, next)
+      const {tokens, user} = await UserService.login(email, password, next)
 
       res.cookie('refreshToken', tokens.refreshToken, {httpOnly: true});
       res.send({
         data: {
           accessToken: tokens.accessToken,
+          user: user
         },
         success: true
       })
@@ -59,12 +60,13 @@ class UserController {
         throw Error(`${errorTypes.VALIDATION} Miss "password" field!`)
       }
 
-      const tokes = await UserService.registration(email, password)
+      const {tokens, user} = await UserService.registration(email, password)
 
-      res.cookie('refreshToken', tokes.refreshToken, {httpOnly: true});
+      res.cookie('refreshToken', tokens.refreshToken, {httpOnly: true});
       res.status(200).send({
         data: {
-          accessToken: tokes.accessToken
+          accessToken: tokens.accessToken,
+          user: user
         },
         success: true
       })

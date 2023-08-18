@@ -19,17 +19,21 @@ class UserService {
 
     const userData = {
       _id: user._id,
-      email
+      email,
+      balance: user.balance,
     }
 
     const accessToken = this._generateAccessToken(new UserDto(userData))
     const refreshToken = this._generateRefreshToken(new UserDto(userData))
-    return TokenModel.findOneAndUpdate({userId: user._id}, {
-      $set: {
-        accessToken,
-        refreshToken
-      }
-    }, {upsert: true, new: true})
+    return {
+      tokens: await TokenModel.findOneAndUpdate({userId: user._id}, {
+        $set: {
+          accessToken,
+          refreshToken
+        }
+      }, {upsert: true, new: true}),
+      user: new UserDto(userData)
+    }
   }
 
   registration = async (email, password) => {
@@ -51,7 +55,10 @@ class UserService {
     const accessToken = this._generateAccessToken(new UserDto(user))
     const refreshToken = this._generateRefreshToken(new UserDto(user))
 
-    return TokenModel.create({userId: user._id, accessToken, refreshToken})
+    return {
+      tokens: await TokenModel.create({userId: user._id, accessToken, refreshToken}, {new: true}),
+      user: new UserDto(user)
+    }
   }
 
   _generateAccessToken = (user) => {
