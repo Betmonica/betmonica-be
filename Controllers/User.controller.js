@@ -23,8 +23,10 @@ class UserController {
       res.cookie('refreshToken', tokens.refreshToken, {httpOnly: true});
       res.send({
         data: {
-          accessToken: tokens.accessToken,
-          expiredIn: tokens.expiredIn,
+          tokenData: {
+            accessToken: tokens.accessToken,
+            expiredIn: tokens.expiredIn,
+          },
           user: user
         },
         success: true
@@ -71,8 +73,10 @@ class UserController {
       res.cookie('refreshToken', tokens.refreshToken, {httpOnly: true});
       res.status(200).send({
         data: {
-          accessToken: tokens.accessToken,
-          expiredIn: tokens.expiredIn,
+          tokenData: {
+            accessToken: tokens.accessToken,
+            expiredIn: tokens.expiredIn,
+          },
           user: user
         },
         success: true
