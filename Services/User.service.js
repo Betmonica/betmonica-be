@@ -47,7 +47,7 @@ class UserService {
   registration = async (email, password) => {
     const isUserWithSameEmailExist = !!(await UserModel.findOne({email}))
     if (isUserWithSameEmailExist) {
-      throw Error(`${errorTypes.VALIDATION} User with same email already exist!`)
+      throw Error(`${errorTypes.AUTHENTICATE} User with same email already exist!`)
     }
 
     const salt = await bcrypt.genSalt(10);
