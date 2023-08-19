@@ -24,7 +24,7 @@ class ErrorsGenerator {
       errorType = error.split(' ')[0].trim().slice(1, -1);
       errorMessage = error.slice(errorType.length + 2).trim()
     } else {
-      return this._generateError(errorTypes.UNEXPECTED, error)
+      return this._generateError(errorTypes.UNEXPECTED.slice(1, -1), error)
     }
 
     return this._generateError(errorType, errorMessage)

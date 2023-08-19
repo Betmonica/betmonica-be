@@ -25,13 +25,21 @@ class UserService {
 
     const accessToken = this._generateAccessToken(new UserDto(userData))
     const refreshToken = this._generateRefreshToken(new UserDto(userData))
+
+    const updatedTokens = await TokenModel.findOneAndUpdate({userId: user._id}, {
+      $set: {
+        accessToken,
+        refreshToken
+      }
+    }, {upsert: true, new: true});
+
+    const {exp: expiredIn} = await jwt.decode(accessToken)
+
     return {
-      tokens: await TokenModel.findOneAndUpdate({userId: user._id}, {
-        $set: {
-          accessToken,
-          refreshToken
-        }
-      }, {upsert: true, new: true}),
+      tokens: {
+        ...updatedTokens._doc,
+        expiredIn
+      },
       user: new UserDto(userData)
     }
   }
@@ -55,8 +63,14 @@ class UserService {
     const accessToken = this._generateAccessToken(new UserDto(user))
     const refreshToken = this._generateRefreshToken(new UserDto(user))
 
+    const createdTokens = await TokenModel.create({userId: user._id, accessToken, refreshToken})
+    const {exp: expiredIn} = await jwt.decode(accessToken)
+
     return {
-      tokens: await TokenModel.create({userId: user._id, accessToken, refreshToken}, {new: true}),
+      tokens: {
+        ...createdTokens._doc,
+        expiredIn
+      },
       user: new UserDto(user)
     }
   }

@@ -24,6 +24,7 @@ class UserController {
       res.send({
         data: {
           accessToken: tokens.accessToken,
+          expiredIn: tokens.expiredIn,
           user: user
         },
         success: true
@@ -35,11 +36,15 @@ class UserController {
 
   logout = async (req, res, next) => {
     try {
-      const user = req.user
+      const refreshToken = req.cookies['refreshToken']
 
-      await TokenModel.findOneAndDelete({userId: user._id})
+      if (!refreshToken) {
+        throw Error(`${errorTypes.VALIDATION} Refresh token does not exist!`)
+      }
 
-      res.cookie('refreshToken', undefined, {httpOnly: true});
+      await TokenModel.findOneAndDelete({refreshToken})
+
+      res.clearCookie('refreshToken');
       res.status(200).send({
         data: {},
         success: true
@@ -67,6 +72,7 @@ class UserController {
       res.status(200).send({
         data: {
           accessToken: tokens.accessToken,
+          expiredIn: tokens.expiredIn,
           user: user
         },
         success: true
@@ -115,9 +121,11 @@ class UserController {
         tokens.accessToken = accessToken;
         await tokens.save()
 
+        const {exp: expiredIn} = await jwt.decode(accessToken)
         return res.status(200).send({
           data: {
             accessToken,
+            expiredIn
           },
           success: true
         })

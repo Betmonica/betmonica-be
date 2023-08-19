@@ -8,7 +8,7 @@ const router = Router();
 router.post('/login', UserController.login)
 router.get('/refresh-token', UserController.token)
 router.post('/registration', UserController.registration)
-router.delete('/logout', authenticateToken, UserController.logout)
+router.delete('/logout', UserController.logout)
 
 router.get('/balance/get', authenticateToken, UserController.getBalance)
 
