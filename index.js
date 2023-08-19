@@ -5,6 +5,7 @@ const cors = require("cors");
 const cookies = require("cookie-parser");
 const cron = require("node-cron");
 const errorHandler = require("./utils/error-handler");
+const accessControlAllowValidation = require("./utils/access-control-allow-validation");
 const MatchesRouter = require("./routes/Match.router");
 const UserRouter = require("./routes/User.router");
 const matchUpdateCron = require("./jobs/match-update.cron");
@@ -13,6 +14,7 @@ const PORT = process.env.PORT || 10000;
 
 const app = express();
 
+app.use(accessControlAllowValidation.validate);
 app.use(cors());
 app.use(express.json());
 app.use(cookies());
