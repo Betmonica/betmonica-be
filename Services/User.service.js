@@ -75,6 +75,10 @@ class UserService {
     }
   }
 
+  getUserData = async (userId) => {
+    return UserModel.findById(userId)
+  }
+
   _generateAccessToken = (user) => {
     return jwt.sign({...user}, process.env.ACCESS_TOKEN_SECRET, {expiresIn: '3h'})
   }

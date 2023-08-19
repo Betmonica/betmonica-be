@@ -139,6 +139,23 @@ class UserController {
     }
   }
 
+  getUserData = async (req, res, next) => {
+    try {
+      const userId = req.user._id
+
+      const userData = await UserService.getUserData(userId)
+
+      res.status(200).send({
+        data: {
+          user: new UserDto(userData._doc)
+        },
+        success: true
+      })
+    } catch (error) {
+      next(errorsGenerator.checkErrorType(error))
+    }
+  }
+
   _generateAccessToken = (user) => {
     return jwt.sign({...user}, process.env.ACCESS_TOKEN_SECRET, {expiresIn: '3h'})
   }
