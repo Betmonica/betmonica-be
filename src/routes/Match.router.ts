@@ -1,8 +1,8 @@
-import {Router} from "express"
-import MatchesController from "../Controllers/Matches.controller"
+import { Router } from 'express';
+import { matchesController } from '../Controllers/Matches.controller';
 
 const router = Router();
 
-router.get("/get", MatchesController.getMatches);
+router.get('/get', matchesController.getMatches);
 
-export default router;
+export default router; 
