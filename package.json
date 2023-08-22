@@ -2,11 +2,12 @@
   "name": "betmonica-be",
   "version": "1.0.0",
   "description": "backend for betmonica",
-  "main": "index.js",
+  "main": "dist/app.js",
   "type": "commonjs",
   "scripts": {
-    "start": "node index.js",
-    "start:watch": "nodemon index.js",
+    "start": "tsc && node ./dist/app.js",
+    "start:watch": "tsc-watch --outDir dist --onSuccess \"node dist/app.js\"",
+    "lint": "eslint . --ext .ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -31,6 +32,10 @@
     "node-cron": "^3.0.2"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "@typescript-eslint/eslint-plugin": "^6.4.1",
+    "@typescript-eslint/parser": "^6.4.1",
+    "eslint": "^8.47.0",
+    "tsc-watch": "^6.0.4",
+    "typescript": "^5.1.6"
   }
 }
