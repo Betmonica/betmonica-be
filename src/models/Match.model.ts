@@ -1,6 +1,6 @@
 import { model, Schema } from 'mongoose';
 
-const matchSchema = new Schema({
+const matchSchema: Schema<any> = new Schema({
 	_id: String,
 	startDate: String,
 	slug: String,

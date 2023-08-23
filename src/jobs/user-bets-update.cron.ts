@@ -1,10 +1,11 @@
+import { BET_STATUSES, MATCH_STATUSES } from '../enums';
 import BetModel from '../models/Bet.model';
-import { errorsGenerator, errorTypes } from '../utils/error-generator';
+import { UnexpectedError } from '../utils/errors';
 
 class UserBetsUpdateCron {
 	updateBetsStatuses = async () => {
 		try {
-			const upcomingBets: any = await BetModel.find({ status: 'upcoming' })
+			const upcomingBets: any = await BetModel.find({ status: MATCH_STATUSES.UPCOMING })
 				.populate('match')
 				.populate('user');
 
@@ -12,20 +13,19 @@ class UserBetsUpdateCron {
 				const matchStatus = upcomingBet.match.status;
 
 				switch (matchStatus.toLowerCase()) {
-					case 'cancelled':
+					case MATCH_STATUSES.CANCELLED:
 						upcomingBet.user.balance += upcomingBet.betAmount;
-						upcomingBet.status = 'cancelled';
+						upcomingBet.status = BET_STATUSES.CANCELLED;
 						break;
-					case 'finished':
+					case MATCH_STATUSES.FINISHED:
 						if (upcomingBet.match.teamWonId === upcomingBet.teamId) {
-							upcomingBet.status = 'win';
-							upcomingBet.user.balance +=
-								upcomingBet.betAmount * upcomingBet.betOdd;
+							upcomingBet.status = BET_STATUSES.WON;
+							upcomingBet.user.balance += upcomingBet.betAmount * upcomingBet.betOdd;
 						} else {
-							upcomingBet.status = 'lose';
+							upcomingBet.status = BET_STATUSES.LOST;
 						}
 						break;
-					case 'upcoming':
+					case MATCH_STATUSES.UPCOMING:
 						// Do not do anything
 						break;
 				}
@@ -34,14 +34,9 @@ class UserBetsUpdateCron {
 				await upcomingBet.save();
 			}
 		} catch (error) {
-			console.log(
-				errorsGenerator.checkErrorType(
-					`${errorTypes.CRON_JOB} Something went wrong ${JSON.stringify(error)}`
-				)
-			);
+			console.log(new UnexpectedError(`Something went wrong ${JSON.stringify(error)}`));
 		}
 	};
 }
 
 export default new UserBetsUpdateCron();
-

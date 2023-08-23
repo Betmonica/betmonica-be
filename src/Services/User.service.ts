@@ -1,20 +1,30 @@
 import * as bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import UserModel from '../models/User.model';
-import { errorTypes } from '../utils/error-generator';
+import { Schema } from 'mongoose';
+import { TokenData, UserWithTokens } from '../interfaces';
 import UserDto from '../dtos/User.dto';
+import UserModel from '../models/User.model';
 import TokenModel from '../models/Token.model';
+import { AuthenticateError, UnexpectedError, ValidationError } from '../utils/errors';
 
 class UserService {
-	login = async (email, password) => {
+	login = async (email: string, password: string): Promise<UserWithTokens> => {
+		if (!email) {
+			throw new ValidationError(`Miss "email" field!`);
+		}
+
+		if (!password) {
+			throw new ValidationError(`Miss "password" field!`);
+		}
+
 		const user = await UserModel.findOne({ email });
 		if (!user) {
-			throw Error(`${errorTypes.AUTHENTICATE} User does not exist!`);
+			throw new AuthenticateError(`User with email: ${email}, does not exist!`);
 		}
 
 		const isPasswordCorrect = await bcrypt.compare(password, user.password);
 		if (!isPasswordCorrect) {
-			throw Error(`${errorTypes.AUTHENTICATE} Incorrect password!`);
+			throw new AuthenticateError('Incorrect password!');
 		}
 
 		const userData = {
@@ -23,10 +33,10 @@ class UserService {
 			balance: user.balance
 		};
 
-		const accessToken = this._generateAccessToken(new UserDto(userData));
-		const refreshToken = this._generateRefreshToken(new UserDto(userData));
+		const accessToken = this.generateAccessToken(new UserDto(userData));
+		const refreshToken = this.generateRefreshToken(new UserDto(userData));
 
-		const updatedTokens: any = await TokenModel.findOneAndUpdate(
+		await TokenModel.findOneAndUpdate(
 			{ userId: user._id },
 			{
 				$set: {
@@ -41,19 +51,35 @@ class UserService {
 
 		return {
 			tokens: {
-				...updatedTokens._doc,
+				accessToken,
+				refreshToken,
 				expiredIn
 			},
 			user: new UserDto(userData)
 		};
 	};
 
-	registration = async (email, password) => {
+	logout = async (refreshToken: string) => {
+		if (!refreshToken) {
+			throw new ValidationError(`Miss "refreshToken" field!`);
+		}
+
+		await TokenModel.findOneAndDelete({ refreshToken });
+		return {};
+	};
+
+	registration = async (email: string, password: string): Promise<UserWithTokens> => {
+		if (!email) {
+			throw new ValidationError(`Miss "email" field!`);
+		}
+
+		if (!password) {
+			throw new ValidationError(`Miss "password" field!`);
+		}
+
 		const isUserWithSameEmailExist = !!(await UserModel.findOne({ email }));
 		if (isUserWithSameEmailExist) {
-			throw Error(
-				`${errorTypes.AUTHENTICATE} User with same email already exist!`
-			);
+			throw new AuthenticateError(`User with email: ${email}, already exist!`);
 		}
 
 		const salt = await bcrypt.genSalt(10);
@@ -66,36 +92,75 @@ class UserService {
 			bets: []
 		});
 
-		const accessToken = this._generateAccessToken(new UserDto(user));
-		const refreshToken = this._generateRefreshToken(new UserDto(user));
+		const accessToken = this.generateAccessToken(new UserDto(user));
+		const refreshToken = this.generateRefreshToken(new UserDto(user));
 
-		const createdTokens: any = await TokenModel.create({
+		await TokenModel.create({
 			userId: user._id,
 			accessToken,
 			refreshToken
 		});
+
 		const { exp: expiredIn } = await jwt.decode(accessToken);
 
 		return {
 			tokens: {
-				...createdTokens._doc,
+				accessToken,
+				refreshToken,
 				expiredIn
 			},
 			user: new UserDto(user)
 		};
 	};
 
-	getUserData = async (userId) => {
-		return UserModel.findById(userId);
+	getBalance = async (userId: Schema.Types.ObjectId): Promise<number> => {
+		if (!userId) {
+			throw new ValidationError(`Miss "userId" field!`);
+		}
+
+		const user = await UserModel.findById(userId);
+		if (!user) {
+			throw new UnexpectedError(`User were not founded!`);
+		}
+
+		return user.balance;
 	};
 
-	_generateAccessToken = (user) => {
+	refreshAccessToken = async (refreshToken: string): Promise<TokenData> => {
+		if (!refreshToken) {
+			throw new AuthenticateError(`Miss "refreshToken" field!`);
+		}
+
+		try {
+			const tokens = await TokenModel.findOne({ refreshToken });
+			if (!tokens) {
+				throw new AuthenticateError(`Refresh token invalid!`);
+			}
+
+			const user = await jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+			const accessToken = this.generateAccessToken(new UserDto(user));
+
+			tokens.accessToken = accessToken;
+			await tokens.save();
+
+			const { exp: expiredIn } = await jwt.decode(accessToken);
+
+			return {
+				accessToken,
+				expiredIn
+			};
+		} catch (err) {
+			throw new AuthenticateError(`Refresh token invalid!`);
+		}
+	};
+
+	private generateAccessToken = (user): string => {
 		return jwt.sign({ ...user }, process.env.ACCESS_TOKEN_SECRET, {
 			expiresIn: '3h'
 		});
 	};
 
-	_generateRefreshToken = (user) => {
+	private generateRefreshToken = (user): string => {
 		return jwt.sign({ ...user }, process.env.REFRESH_TOKEN_SECRET);
 	};
 }

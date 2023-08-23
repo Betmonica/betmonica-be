@@ -1,58 +1,41 @@
-import jwt from 'jsonwebtoken';
-import TokenModel from '../models/Token.model';
+import { TokenData, UserWithTokens } from '../interfaces';
+import UserDto from '../dtos/User.dto';
 import UserModel from '../models/User.model';
 import UserService from '../Services/User.service';
-import { errorsGenerator, errorTypes } from '../utils/error-generator';
-import UserDto from '../dtos/User.dto';
+import { responseGenerator } from '../utils/response';
 
 class UserController {
-	login = async (req, res, next) => {
+	login = async (req: any, res: any, next: Function) => {
 		try {
 			const { email, password } = req.body;
 
-			if (!email) {
-				throw Error(`${errorTypes.VALIDATION} Miss "email" field!`);
-			}
-
-			if (!password) {
-				throw Error(`${errorTypes.VALIDATION} Miss "password" field!`);
-			}
-
-			const { tokens, user } = await UserService.login(email, password);
+			const { tokens, user }: UserWithTokens = await UserService.login(email, password);
 
 			res.cookie('refreshToken', tokens.refreshToken, { httpOnly: true });
-			res.send({
-				data: {
+			res.status(200).send(
+				responseGenerator.Success({
 					tokenData: {
 						accessToken: tokens.accessToken,
 						expiredIn: tokens.expiredIn
 					},
 					user: user
-				},
-				success: true
-			});
+				})
+			);
 		} catch (error) {
-			next(errorsGenerator.checkErrorType(error));
+			next(error);
 		}
 	};
 
 	logout = async (req, res, next) => {
 		try {
 			const refreshToken = req.cookies['refreshToken'];
-
-			if (!refreshToken) {
-				throw Error(`${errorTypes.VALIDATION} Refresh token does not exist!`);
-			}
-
-			await TokenModel.findOneAndDelete({ refreshToken });
-
 			res.clearCookie('refreshToken');
-			res.status(200).send({
-				data: {},
-				success: true
-			});
+
+			const data: {} = await UserService.logout(refreshToken);
+
+			res.status(200).send(responseGenerator.Success(data));
 		} catch (error) {
-			next(errorsGenerator.checkErrorType(error));
+			next(error);
 		}
 	};
 
@@ -60,110 +43,65 @@ class UserController {
 		try {
 			const { email, password } = req.body;
 
-			if (!email) {
-				throw Error(`${errorTypes.VALIDATION} Miss "email" field!`);
-			}
-
-			if (!password) {
-				throw Error(`${errorTypes.VALIDATION} Miss "password" field!`);
-			}
-
-			const { tokens, user } = await UserService.registration(email, password);
+			const { tokens, user }: UserWithTokens = await UserService.registration(email, password);
 
 			res.cookie('refreshToken', tokens.refreshToken, { httpOnly: true });
-			res.status(200).send({
-				data: {
+			res.status(200).send(
+				responseGenerator.Success({
 					tokenData: {
 						accessToken: tokens.accessToken,
 						expiredIn: tokens.expiredIn
 					},
 					user: user
-				},
-				success: true
-			});
+				})
+			);
 		} catch (error) {
-			next(errorsGenerator.checkErrorType(error));
+			next(error);
 		}
 	};
 
 	getBalance = async (req, res, next) => {
 		try {
-			const { _id } = req.user;
+			const { id: userId } = req.user;
 
-			const user = await UserModel.findById(_id);
+			const balance: number = await UserService.getBalance(userId);
 
-			res.status(200).send({
-				data: {
-					balance: user.balance
-				},
-				success: true
-			});
-		} catch (err) {
-			next(errorsGenerator.checkErrorType(err));
+			res.status(200).send(responseGenerator.Success({ balance }));
+		} catch (error) {
+			next(error);
 		}
 	};
 
 	token = async (req, res, next) => {
 		try {
 			const refreshToken = req.cookies['refreshToken'];
-			if (!refreshToken) {
-				throw Error(`${errorTypes.AUTHENTICATE} Refresh token does not exist!`);
-			}
 
-			const tokens = await TokenModel.findOne({ refreshToken });
-			if (!tokens) {
-				throw Error(`${errorTypes.AUTHENTICATE} Refresh token invalid!`);
-			}
+			const tokens: TokenData = await UserService.refreshAccessToken(refreshToken);
 
-			jwt.verify(
-				refreshToken,
-				process.env.REFRESH_TOKEN_SECRET,
-				async (err, user) => {
-					if (err) {
-						throw Error(`${errorTypes.AUTHENTICATE} Refresh token invalid!`);
-					}
-
-					const accessToken = this._generateAccessToken(new UserDto(user));
-
-					tokens.accessToken = accessToken;
-					await tokens.save();
-
-					const { exp: expiredIn } = await jwt.decode(accessToken);
-					return res.status(200).send({
-						data: {
-							accessToken,
-							expiredIn
-						},
-						success: true
-					});
-				}
+			res.status(200).send(
+				responseGenerator.Success({
+					accessToken: tokens.accessToken,
+					expiredIn: tokens.expiredIn
+				})
 			);
 		} catch (error) {
-			next(errorsGenerator.checkErrorType(error));
+			next(error);
 		}
 	};
 
 	getUserData = async (req, res, next) => {
 		try {
-			const userId = req.user._id;
+			const { id: userId } = req.user;
+			const user: any = await UserModel.findById(userId);
 
-			const userData: any = await UserService.getUserData(userId);
-
-			res.status(200).send({
-				data: {
-					user: new UserDto(userData._doc)
-				},
-				success: true
-			});
+			res.status(200).send(
+				responseGenerator.Success({
+					user: new UserDto(user)
+				})
+			);
 		} catch (error) {
-			next(errorsGenerator.checkErrorType(error));
+			next(error);
 		}
-	};
-
-	_generateAccessToken = (user) => {
-		return jwt.sign({ ...user }, process.env.ACCESS_TOKEN_SECRET, {
-			expiresIn: '3h'
-		});
 	};
 }
 

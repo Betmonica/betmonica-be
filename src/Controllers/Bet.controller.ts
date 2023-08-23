@@ -1,56 +1,44 @@
+import { MatchWithBets, PlaceBetResponse } from '../interfaces';
+import UserDto from '../dtos/User.dto';
 import BetService from '../Services/Bet.service';
-import { errorsGenerator, errorTypes } from '../utils/error-generator';
+import { responseGenerator } from '../utils/response';
 
 class BetController {
-	async placeBet(req, res, next) {
+	async placeBet(req: any, res: any, next: Function): Promise<void> {
 		try {
 			const { matchId, teamId, betAmount } = req.body;
-			const { email } = req.user;
+			const { id: userId }: UserDto = req.user;
 
-			const betData = await BetService.placeBet(
-				email,
-				matchId,
-				teamId,
-				betAmount
-			);
+			const betData: PlaceBetResponse = await BetService.placeBet(userId, matchId, teamId, betAmount);
 
-			res
-				.status(200)
-				.send({
-					data: { bet: betData.bet, match: betData.match },
-					success: true
-				});
+			res.status(200).send(responseGenerator.Success({ bet: betData.bet, match: betData.match }));
 		} catch (error) {
-			next(errorsGenerator.checkErrorType(error));
+			next(error);
 		}
 	}
 
-	async getBets(req, res, next) {
+	async getBets(req: any, res: any, next: Function): Promise<void> {
 		try {
-			const { email } = req.user;
+			const { id: userId }: UserDto = req.user;
 
-			const bets = await BetService.getBets(email);
+			const bets: MatchWithBets[] = await BetService.getBetsByUserId(userId);
 
-			res.status(200).send({ data: { bets }, success: true });
+			res.status(200).send(responseGenerator.Success({ bets }));
 		} catch (error) {
-			next(errorsGenerator.checkErrorType(error));
+			next(error);
 		}
 	}
 
-	async cancelBet(req, res, next) {
+	async cancelBet(req: any, res: any, next: Function): Promise<void> {
 		try {
+			const { id: userId }: UserDto = req.user;
 			const { betId } = req.body;
-			const { email } = req.user;
 
-			if (!betId) {
-				throw Error(`${errorTypes.VALIDATION} Bet id does not provided!`);
-			}
+			await BetService.cancelBetByUserId(userId, betId);
 
-			const data = await BetService.cancelBet(email, betId);
-
-			res.status(200).send({ data, success: true });
+			res.status(200).send(responseGenerator.Success({}));
 		} catch (error) {
-			next(errorsGenerator.checkErrorType(error));
+			next(error);
 		}
 	}
 }

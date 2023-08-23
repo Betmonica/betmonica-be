@@ -1,18 +1,20 @@
+import { Schema } from 'mongoose';
+import { MATCH_STATUSES } from '../enums';
 import TeamDto from './Team.dto';
 
 export default class MatchDto {
-	id;
-	startDate;
-	slug;
-	isLive;
-	countMaps;
-	tournament;
-	tournamentId;
-	tournamentLogo;
-	teamWonId;
-	homeTeam;
-	awayTeam;
-	status;
+	id: Schema.Types.ObjectId;
+	startDate: Date;
+	slug: string;
+	isLive: boolean;
+	countMaps: number;
+	tournament: string;
+	tournamentId: string;
+	tournamentLogo: string;
+	teamWonId: string;
+	homeTeam: TeamDto;
+	awayTeam: TeamDto;
+	status: MATCH_STATUSES;
 
 	constructor(model) {
 		this.id = model._id;
@@ -28,4 +30,4 @@ export default class MatchDto {
 		this.homeTeam = new TeamDto(model.homeTeam);
 		this.awayTeam = new TeamDto(model.awayTeam);
 	}
-};
+}

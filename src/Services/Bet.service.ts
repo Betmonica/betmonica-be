@@ -1,42 +1,62 @@
+import { Schema } from 'mongoose';
+import { MatchWithBets, PlaceBetResponse } from '../interfaces';
+import { BET_STATUSES, MATCH_STATUSES } from '../enums';
+import BetDto from '../dtos/Bet.dto';
+import MatchDto from '../dtos/Match.dto';
 import UserModel from '../models/User.model';
 import MatchModel from '../models/Match.model';
 import BetModel from '../models/Bet.model';
-import BetDto from '../dtos/Bet.dto';
-import { errorTypes } from '../utils/error-generator';
+import { AuthenticateError, ValidationError } from '../utils/errors';
 
 class BetService {
-	placeBet = async (email, matchId, teamId, betAmount) => {
+	async placeBet(
+		userId: Schema.Types.ObjectId,
+		matchId: string,
+		teamId: string,
+		betAmount: number
+	): Promise<PlaceBetResponse> {
+		if (!userId) {
+			throw new ValidationError(`Miss "userId" field!`);
+		}
+
+		if (!matchId) {
+			throw new ValidationError(`Miss "matchId" field!`);
+		}
+
+		if (!teamId) {
+			throw new ValidationError(`Miss "teamId" field!`);
+		}
+
+		if (!betAmount) {
+			throw new ValidationError(`Miss "betAmount" field!`);
+		}
+
 		const match = await MatchModel.findOne({
 			_id: matchId,
-			status: 'upcoming',
+			status: MATCH_STATUSES.UPCOMING,
 			isLive: false
 		});
 		if (!match) {
-			throw Error(`${errorTypes.VALIDATION} Match with this id does not exit!`);
+			throw new ValidationError(`Upcoming match with id: ${matchId}, were not founded!`);
 		}
 
 		if (match.homeTeam.teamId !== teamId && match.awayTeam.teamId !== teamId) {
-			throw Error(`${errorTypes.VALIDATION} Team with this id does not exit!`);
+			throw new ValidationError(`Team with id: ${teamId}, were not founded!`);
 		}
 
-		const betOdd =
-			match.homeTeam.teamId === teamId
-				? match.homeTeam.odd
-				: match.awayTeam.odd;
+		const betOdd: number = match.homeTeam.teamId === teamId ? match.homeTeam.odd : match.awayTeam.odd;
 		if (!betOdd) {
-			throw Error(`${errorTypes.VALIDATION} Odd does not exist!`);
+			throw new ValidationError(`Odd does not exist!`);
 		}
 
-		const user = await UserModel.findOne({ email }).populate('bets');
+		const user: any = await UserModel.findById(userId).populate('bets');
 		if (user.balance < betAmount) {
-			throw Error(`${errorTypes.VALIDATION} User do not have enough balance!`);
+			throw new ValidationError(`User do not have enough balance!`);
 		}
 
-		const isBetOnOtherTeamExist = user.bets.some(
-			(bet: any) => bet.match === matchId && bet.teamId !== teamId
-		);
+		const isBetOnOtherTeamExist: boolean = user.bets.some((bet: any) => bet.match === matchId && bet.teamId !== teamId);
 		if (isBetOnOtherTeamExist) {
-			throw Error(`${errorTypes.VALIDATION} You already bet to enemy team!`);
+			throw new ValidationError(`You already have bet to enemy team!`);
 		}
 
 		const bet = await BetModel.create({
@@ -45,44 +65,62 @@ class BetService {
 			teamId,
 			betAmount,
 			betOdd,
-			status: 'upcoming'
+			status: BET_STATUSES.UPCOMING
 		});
 
 		user.balance -= betAmount;
 		user.bets.unshift(bet._id);
 		await user.save();
 
-		return new BetDto(bet);
-	};
+		return {
+			bet: new BetDto(bet),
+			match: new MatchDto(match)
+		};
+	}
 
-	getBets = async (userEmail) => {
-		const user = await UserModel.findOne({ email: userEmail })
+	async getBetsByUserId(userId: Schema.Types.ObjectId): Promise<MatchWithBets[]> {
+		if (!userId) {
+			throw new ValidationError(`Miss "userId" field!`);
+		}
+
+		const user: any = await UserModel.findById(userId)
 			.populate('bets')
 			.populate({
 				path: 'bets',
 				populate: { path: 'match' }
 			});
 
-		return user.bets.map((bet) => new BetDto(bet));
-	};
+		return user.bets.map(
+			(bet: any): MatchWithBets => ({
+				bet: new BetDto(bet),
+				match: new MatchDto(bet.match)
+			})
+		);
+	}
 
-	cancelBet = async (userEmail, betId) => {
-		const user: any = await UserModel.findOne({ email: userEmail })
+	async cancelBetByUserId(userId: Schema.Types.ObjectId, betId: string): Promise<{}> {
+		if (!userId) {
+			throw new AuthenticateError(`Miss "userId" field!`);
+		}
+
+		if (!betId) {
+			throw new ValidationError(`Miss "betId" field!`);
+		}
+
+		const user: any = await UserModel.findById(userId)
 			.populate('bets')
 			.populate({
 				path: 'bets',
 				populate: { path: 'match' }
 			});
 
-		const bets = [];
+		const bets: BetDto[] = [];
 
 		for (const bet of user.bets) {
 			if (!bet._id.equals(betId)) {
 				bets.push(bet);
 			} else if (bet.match.isLive) {
-				throw Error(
-					`${errorTypes.VALIDATION} Can't cancel bet, match already in live!`
-				);
+				throw new ValidationError(`Can't cancel bet, match with id: ${bet.match._id} already in live!`);
 			} else {
 				user.balance += bet.betAmount;
 			}
@@ -92,16 +130,16 @@ class BetService {
 
 		const bet = await BetModel.findOneAndDelete({
 			_id: betId,
-			status: 'upcoming'
+			status: BET_STATUSES.UPCOMING
 		});
 
 		if (!bet) {
-			throw Error(`${errorTypes.VALIDATION} Bet were not found!`);
+			throw new ValidationError(`Bet were not found!`);
 		}
 
 		await user.save();
 		return {};
-	};
+	}
 }
 
-export default new BetService()
+export default new BetService();

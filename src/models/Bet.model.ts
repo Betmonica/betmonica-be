@@ -1,6 +1,6 @@
 import { model, Schema } from 'mongoose';
 
-const betSchema = new Schema({
+const betSchema: Schema<any> = new Schema({
 	user: { type: Schema.Types.ObjectId, ref: 'user', required: true },
 	match: { type: String, ref: 'match', required: true },
 	teamId: { type: String, required: true },

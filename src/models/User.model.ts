@@ -1,6 +1,6 @@
 import { model, Schema } from 'mongoose';
 
-const userSchema = new Schema({
+const userSchema: Schema<any> = new Schema({
 	email: { type: String, required: true },
 	password: { type: String, required: true },
 	balance: { type: Number, required: true },

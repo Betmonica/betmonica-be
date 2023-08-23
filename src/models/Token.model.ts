@@ -1,6 +1,6 @@
 import { model, Schema } from 'mongoose';
 
-const tokenSchema = new Schema({
+const tokenSchema: Schema<any> = new Schema({
 	userId: {
 		type: Schema.Types.ObjectId,
 		ref: 'user',

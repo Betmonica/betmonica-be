@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
-import { errorsGenerator, errorTypes } from './error-generator';
 import TokenModel from '../models/Token.model';
+import { AuthenticateError } from './errors';
 
 const authenticateToken = async (req, res, next) => {
 	const authHeader = req.headers['authorization'];
@@ -8,21 +8,13 @@ const authenticateToken = async (req, res, next) => {
 	const token = authHeader?.split(' ')[1];
 
 	if (token == null) {
-		next(
-			errorsGenerator.checkErrorType(
-				`${errorTypes.AUTHENTICATE} Miss bearer token!`
-			)
-		);
+		next(new AuthenticateError(`Miss bearer token!`));
 		return;
 	}
 
 	const tokens = await TokenModel.findOne({ accessToken: token });
 	if (!tokens) {
-		next(
-			errorsGenerator.checkErrorType(
-				`${errorTypes.AUTHENTICATE} Access token is not defined in DB!`
-			)
-		);
+		next(new AuthenticateError(`Access token is not defined in DB!`));
 		return;
 	}
 
@@ -30,20 +22,11 @@ const authenticateToken = async (req, res, next) => {
 		if (err) {
 			if (err.name === 'TokenExpiredError') {
 				await TokenModel.findOneAndDelete({ accessToken: token });
-				next(
-					errorsGenerator.checkErrorType(
-						`${errorTypes.AUTHENTICATE} Token expired!`
-					)
-				);
+				next(new AuthenticateError(`Token expired!`));
 				return;
 			}
-			next(
-				errorsGenerator.checkErrorType(
-					`${errorTypes.AUTHENTICATE} Bearer token error ${JSON.stringify(
-						err
-					)}!`
-				)
-			);
+
+			next(new AuthenticateError(`Bearer token error ${JSON.stringify(err)}!`));
 			return;
 		}
 
@@ -52,4 +35,4 @@ const authenticateToken = async (req, res, next) => {
 	});
 };
 
-export default authenticateToken
+export default authenticateToken;

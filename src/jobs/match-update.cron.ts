@@ -1,18 +1,19 @@
 import axios from 'axios';
 import MatchModel from '../models/Match.model';
-import { errorsGenerator } from '../utils/error-generator';
+import { UnexpectedError } from '../utils/errors';
+import { MATCH_STATUSES } from '../enums';
 
 class MatchUpdate {
-	async updateMatches() {
+	async updateMatches(): Promise<void> {
 		try {
 			const matches = await this._getMatches();
 			await this._formatMatchesData(matches);
 		} catch (error) {
-			console.log(errorsGenerator.checkErrorType(error));
+			console.log(new UnexpectedError(error));
 		}
 	}
 
-	async _formatMatchesData(matches) {
+	async _formatMatchesData(matches): Promise<void> {
 		for (const match of matches) {
 			await MatchModel.findByIdAndUpdate(
 				match._id,
@@ -25,8 +26,7 @@ class MatchUpdate {
 						tournament: match.tournament,
 						tournamentId: match.tournament_id,
 						tournamentLogo: process.env.MATCHES_REFERER + match.tournament_logo,
-						countMaps:
-							parseInt(match.best_type.slice('Best of'.length)) || undefined,
+						countMaps: parseInt(match.best_type.slice('Best of'.length)) || undefined,
 						homeTeam: {
 							teamId: match.home_team_id,
 							odd: match.home_team_odd,
@@ -51,21 +51,18 @@ class MatchUpdate {
 			acc[match._id] = match;
 			return acc;
 		}, {});
-		const matchesFromDB = await MatchModel.find({ status: 'upcoming' });
+		const matchesFromDB: any = await MatchModel.find({ status: MATCH_STATUSES.UPCOMING });
 
 		const matchesResult = await this._getMatchesResult();
 
 		for (const match of matchesFromDB) {
 			// if match does not exist in "matches" that comes from website, that means this match is end
 			if (!objectMatches[match._id]) {
-				const matchResult = await this._findMatchResultByMatchId(
-					matchesResult,
-					match._id
-				);
+				const matchResult = await this._findMatchResultByMatchId(matchesResult, match._id);
 
 				if (!matchResult) {
 					match.teamWonId = null;
-					match.status = 'cancelled';
+					match.status = MATCH_STATUSES.CANCELLED;
 					match.isLive = false;
 
 					match.homeTeam.score = 0;

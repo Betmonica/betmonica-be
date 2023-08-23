@@ -1,11 +1,13 @@
+import { Schema } from 'mongoose';
+
 export default class UserDto {
-	_id;
-	email;
-	balance;
+	id: Schema.Types.ObjectId;
+	email: string;
+	balance: number;
 
 	constructor(model) {
-		this._id = model._id;
+		this.id = model._id || model.id;
 		this.email = model.email;
 		this.balance = model.balance;
 	}
-};
+}

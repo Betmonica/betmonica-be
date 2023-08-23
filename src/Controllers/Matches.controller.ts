@@ -1,21 +1,17 @@
+import MatchDto from '../dtos/Match.dto';
 import MatchService from '../Services/Matches.service';
-import { errorsGenerator } from '../utils/error-generator';
+import { responseGenerator } from '../utils/response';
 
 class MatchesController {
-	async getMatches(req, res, next): Promise<any> {
+	async getMatches(req: any, res: any, next: Function): Promise<any> {
 		try {
 			const { status } = req.query;
 
-			const matches = await MatchService.getMatches(status);
+			const matches: MatchDto[] = await MatchService.getMatches(status);
 
-			return res.status(200).send({
-				data: {
-					matches
-				},
-				success: true
-			});
+			res.status(200).send(responseGenerator.Success({ matches }));
 		} catch (error) {
-			next(errorsGenerator.checkErrorType(error));
+			next(error);
 		}
 	}
 }

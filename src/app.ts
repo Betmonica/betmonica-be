@@ -12,9 +12,9 @@ import UserRouter from './routes/User.router';
 import matchUpdateCron from './jobs/match-update.cron';
 import userBetsUpdate from './jobs/user-bets-update.cron';
 
-dotenv.config();
+const PORT: number = +process.env.PORT || 10000;
 
-const PORT = process.env.PORT || 10000;
+dotenv.config();
 
 const app = express();
 

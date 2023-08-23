@@ -1,9 +1,11 @@
+import { Schema } from 'mongoose';
+
 export default class TeamDto {
-	odd;
-	id;
-	name;
-	imageUrl;
-	countryCode;
+	id: Schema.Types.ObjectId;
+	odd: number;
+	name: string;
+	imageUrl: string;
+	countryCode: string;
 
 	constructor(model) {
 		this.id = model.teamId;
@@ -12,4 +14,4 @@ export default class TeamDto {
 		this.imageUrl = model.imageUrl;
 		this.countryCode = model.countryCode;
 	}
-};
+}
