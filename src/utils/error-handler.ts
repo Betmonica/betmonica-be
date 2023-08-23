@@ -16,7 +16,7 @@ class ErrorHandler {
 		}
 
 		console.log('Something went wrong', { type, message });
-		res.status(200).send(responseGenerator.Error({ type, message }));
+		res.status(400).send(responseGenerator.Error({ type, message }));
 	}
 }
 
