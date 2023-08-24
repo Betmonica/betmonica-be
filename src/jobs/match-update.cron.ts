@@ -15,6 +15,11 @@ class MatchUpdate {
 
 	async _formatMatchesData(matches): Promise<void> {
 		for (const match of matches) {
+			const delayToLive: number = 1000 * 60 * 5; // 5 minutes
+			const currentTime: number = new Date().getTime();
+			const matchTime: number = new Date(match.start_date).getTime();
+			const isMatchStarted: boolean = matchTime < currentTime + delayToLive;
+
 			await MatchModel.findByIdAndUpdate(
 				match._id,
 				{
@@ -22,7 +27,7 @@ class MatchUpdate {
 						slug: match.slug,
 						status: match.status,
 						startDate: match.start_date,
-						isLive: match.isLive || false,
+						isLive: match.isLive || isMatchStarted || false,
 						tournament: match.tournament,
 						tournamentId: match.tournament_id,
 						tournamentLogo: process.env.MATCHES_REFERER + match.tournament_logo,
