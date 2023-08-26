@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import TokenModel from '../models/Token.model';
-import { AuthenticateError } from './errors';
+import { AuthenticateError, TokenExpiredError } from './errors';
 
 const authenticateToken = async (req, res, next) => {
 	const authHeader = req.headers['authorization'];
@@ -22,7 +22,7 @@ const authenticateToken = async (req, res, next) => {
 		if (err) {
 			if (err.name === 'TokenExpiredError') {
 				await TokenModel.findOneAndDelete({ accessToken: token });
-				next(new AuthenticateError(`Token expired!`));
+				next(new TokenExpiredError(`Token expired!`));
 				return;
 			}
 

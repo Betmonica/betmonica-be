@@ -18,6 +18,7 @@ dotenv.config();
 
 const app = express();
 
+app.use(cookies());
 app.use(accessControlAllowValidation.validate);
 app.use(
 	cors({
@@ -25,7 +26,6 @@ app.use(
 	})
 );
 app.use(express.json());
-app.use(cookies());
 app.use('/api/matches', MatchesRouter);
 app.use('/api/user', UserRouter);
 app.use(errorHandler.handleError);

@@ -13,7 +13,8 @@ class BaseError extends Error {
 export enum ERROR_TYPES {
 	VALIDATION = 'Validation',
 	UNEXPECTED = 'Unexpected',
-	AUTHENTICATE = 'Authenticate'
+	AUTHENTICATE = 'Authenticate',
+	TOKEN_EXPIRED_ERROR = 'TokenExpiredError'
 }
 
 export class ValidationError extends BaseError {
@@ -31,6 +32,12 @@ export class UnexpectedError extends BaseError {
 export class AuthenticateError extends BaseError {
 	constructor(description: string) {
 		super(ERROR_TYPES.AUTHENTICATE, description);
+	}
+}
+
+export class TokenExpiredError extends BaseError {
+	constructor(description: string) {
+		super(ERROR_TYPES.TOKEN_EXPIRED_ERROR, description);
 	}
 }
 
