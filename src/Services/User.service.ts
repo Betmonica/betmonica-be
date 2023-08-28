@@ -36,16 +36,11 @@ class UserService {
 		const accessToken = this.generateAccessToken(new UserDto(userData));
 		const refreshToken = this.generateRefreshToken(new UserDto(userData));
 
-		await TokenModel.findOneAndUpdate(
-			{ userId: user._id },
-			{
-				$set: {
-					accessToken,
-					refreshToken
-				}
-			},
-			{ upsert: true, new: true }
-		);
+		await TokenModel.create({
+			userId: user._id,
+			accessToken,
+			refreshToken
+		});
 
 		const { exp: expiredIn } = await jwt.decode(accessToken);
 
