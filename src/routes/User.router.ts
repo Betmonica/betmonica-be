@@ -10,7 +10,6 @@ router.get('/refresh-token', UserController.token);
 router.post('/registration', UserController.registration);
 router.delete('/logout', UserController.logout);
 
-router.get('/user-data', authenticateToken, UserController.getUserData);
 router.get('/balance/get', authenticateToken, UserController.getBalance);
 
 router.get('/bets/get-bets', authenticateToken, betController.getBets);

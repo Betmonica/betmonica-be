@@ -88,21 +88,6 @@ class UserController {
 			next(error);
 		}
 	};
-
-	getUserData = async (req, res, next) => {
-		try {
-			const { id: userId } = req.user;
-			const user: any = await UserModel.findById(userId);
-
-			res.status(200).send(
-				responseGenerator.Success({
-					user: new UserDto(user)
-				})
-			);
-		} catch (error) {
-			next(error);
-		}
-	};
 }
 
 export default new UserController();
