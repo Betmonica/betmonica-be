@@ -98,7 +98,7 @@ class BetService {
 		);
 	}
 
-	async cancelBetByUserId(userId: Schema.Types.ObjectId, betId: string): Promise<{}> {
+	async cancelBet(userId: Schema.Types.ObjectId, betId: string): Promise<{}> {
 		if (!userId) {
 			throw new AuthenticateError(`Miss "userId" field!`);
 		}

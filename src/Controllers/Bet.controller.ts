@@ -34,7 +34,7 @@ class BetController {
 			const { id: userId }: UserDto = req.user;
 			const { betId } = req.body;
 
-			await BetService.cancelBetByUserId(userId, betId);
+			await BetService.cancelBet(userId, betId);
 
 			res.status(200).send(responseGenerator.Success({}));
 		} catch (error) {
