@@ -1,6 +1,4 @@
-import { TokenData, UserWithTokens } from '../interfaces';
-import UserDto from '../dtos/User.dto';
-import UserModel from '../models/User.model';
+import { TokenData } from '../interfaces';
 import UserService from '../Services/User.service';
 import { responseGenerator } from '../utils/response';
 
@@ -9,16 +7,12 @@ class UserController {
 		try {
 			const { email, password } = req.body;
 
-			const { tokens, user }: UserWithTokens = await UserService.login(email, password);
+			const tokens: TokenData = await UserService.login(email, password);
 
 			res.cookie('refreshToken', tokens.refreshToken, { httpOnly: true });
 			res.status(200).send(
 				responseGenerator.Success({
-					tokenData: {
-						accessToken: tokens.accessToken,
-						expiredIn: tokens.expiredIn
-					},
-					user: user
+					accessToken: tokens.accessToken
 				})
 			);
 		} catch (error) {
@@ -41,18 +35,14 @@ class UserController {
 
 	registration = async (req, res, next) => {
 		try {
-			const { email, password } = req.body;
+			const { username, email, password } = req.body;
 
-			const { tokens, user }: UserWithTokens = await UserService.registration(email, password);
+			const tokens: TokenData = await UserService.registration(username, email, password);
 
 			res.cookie('refreshToken', tokens.refreshToken, { httpOnly: true });
 			res.status(200).send(
 				responseGenerator.Success({
-					tokenData: {
-						accessToken: tokens.accessToken,
-						expiredIn: tokens.expiredIn
-					},
-					user: user
+					accessToken: tokens.accessToken
 				})
 			);
 		} catch (error) {
@@ -80,8 +70,7 @@ class UserController {
 
 			res.status(200).send(
 				responseGenerator.Success({
-					accessToken: tokens.accessToken,
-					expiredIn: tokens.expiredIn
+					accessToken: tokens.accessToken
 				})
 			);
 		} catch (error) {

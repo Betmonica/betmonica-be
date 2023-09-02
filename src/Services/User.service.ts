@@ -1,14 +1,14 @@
 import * as bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { Schema } from 'mongoose';
-import { TokenData, UserWithTokens } from '../interfaces';
+import { TokenData } from '../interfaces';
 import UserDto from '../dtos/User.dto';
 import UserModel from '../models/User.model';
 import TokenModel from '../models/Token.model';
 import { AuthenticateError, UnexpectedError, ValidationError } from '../utils/errors';
 
 class UserService {
-	login = async (email: string, password: string): Promise<UserWithTokens> => {
+	login = async (email: string, password: string): Promise<TokenData> => {
 		if (!email) {
 			throw new ValidationError(`Miss "email" field!`);
 		}
@@ -29,6 +29,7 @@ class UserService {
 
 		const userData = {
 			_id: user._id,
+			username: user.username,
 			email,
 			balance: user.balance
 		};
@@ -42,15 +43,9 @@ class UserService {
 			refreshToken
 		});
 
-		const { exp: expiredIn } = await jwt.decode(accessToken);
-
 		return {
-			tokens: {
-				accessToken,
-				refreshToken,
-				expiredIn
-			},
-			user: new UserDto(userData)
+			accessToken,
+			refreshToken
 		};
 	};
 
@@ -63,7 +58,11 @@ class UserService {
 		return {};
 	};
 
-	registration = async (email: string, password: string): Promise<UserWithTokens> => {
+	registration = async (username: string, email: string, password: string): Promise<TokenData> => {
+		if (!username) {
+			throw new ValidationError(`Miss "username" field!`);
+		}
+
 		if (!email) {
 			throw new ValidationError(`Miss "email" field!`);
 		}
@@ -82,6 +81,7 @@ class UserService {
 
 		const user = await UserModel.create({
 			email,
+			username,
 			password: hashedPassword,
 			balance: 1000,
 			bets: []
@@ -96,15 +96,9 @@ class UserService {
 			refreshToken
 		});
 
-		const { exp: expiredIn } = await jwt.decode(accessToken);
-
 		return {
-			tokens: {
-				accessToken,
-				refreshToken,
-				expiredIn
-			},
-			user: new UserDto(user)
+			accessToken,
+			refreshToken
 		};
 	};
 
@@ -138,11 +132,8 @@ class UserService {
 			tokens.accessToken = accessToken;
 			await tokens.save();
 
-			const { exp: expiredIn } = await jwt.decode(accessToken);
-
 			return {
-				accessToken,
-				expiredIn
+				accessToken
 			};
 		} catch (err) {
 			throw new AuthenticateError(`Refresh token invalid!`);

@@ -2,12 +2,12 @@ import { Schema } from 'mongoose';
 
 export default class UserDto {
 	id: Schema.Types.ObjectId;
+	username: string;
 	email: string;
-	balance: number;
 
 	constructor(model) {
 		this.id = model._id || model.id;
+		this.username = model.username;
 		this.email = model.email;
-		this.balance = model.balance;
 	}
 }

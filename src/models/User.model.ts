@@ -2,6 +2,7 @@ import { model, Schema } from 'mongoose';
 
 const userSchema: Schema<any> = new Schema({
 	email: { type: String, required: true },
+	username: { type: String, required: true },
 	password: { type: String, required: true },
 	balance: { type: Number, required: true },
 	bets: [
